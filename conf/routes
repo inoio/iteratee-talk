@@ -1,0 +1,22 @@
+# Routes
+# This file defines all application routes (Higher priority routes first)
+# ~~~~
+
+GET        /step1               controllers.Application.step1
+
+GET        /step2               controllers.Application.step2
+
+GET        /step3               controllers.Application.step3
+
+GET        /step4               controllers.Application.step4
+
+GET        /step5               controllers.Application.step5
+
+GET        /step6               controllers.Application.step6
+
+GET        /step7               controllers.Application.step7
+
+GET        /                    controllers.Assets.at(path = "/public/slides/iteratees", file = "index.html")
+
+# Map static resources from the /public folder to the /assets URL path
+GET        /assets/*file        controllers.Assets.at(path="/public/slides/iteratees/assets", file)
