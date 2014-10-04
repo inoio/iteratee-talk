@@ -16,6 +16,8 @@ GET        /step6               controllers.Application.step6
 
 GET        /step7               controllers.Application.step7
 
+GET        /step8               controllers.Application.step8
+
 GET        /                    controllers.Assets.at(path = "/public/slides/iteratees", file = "index.html")
 
 # Map static resources from the /public folder to the /assets URL path
