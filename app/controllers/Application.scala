@@ -25,6 +25,19 @@ object Application extends Controller {
 
   implicit val writeableSeqElement: Writeable[Seq[Element]] = new Writeable[Seq[Element]](elements => Json.toJson(elements).toString.getBytes(), Some(JSON))
 
+
+  def safeParse(string: String): Try[Element] = {
+    for {
+                                        jsValue <- Try {
+                                          Json.parse(string)
+                                        }
+                                        element <- jsValue.asOpt[Element] match {
+                                          case Some(element) => Success(element)
+                                          case None => Failure(new IllegalArgumentException(string))
+                                        }
+    } yield element
+  }
+
   // step1 : produce an endless enumerator of Json objects
   val _step1: Enumerator[Element] = Enumerator.repeat(Element())
 
@@ -35,18 +48,6 @@ object Application extends Controller {
   val _step3 = _step1 &> Enumeratee.filter {
     _.number > 0
   } &> Enumeratee.take(1000)
-
-  def safeParse(string: String): Try[Element] = {
-    for {
-      jsValue <- Try {
-        Json.parse(string)
-      }
-      element <- jsValue.asOpt[Element] match {
-        case Some(element) => Success(element)
-        case None => Failure(new IllegalArgumentException(string))
-      }
-    } yield element
-  }
 
   val toBytes: Enumeratee[Array[Byte], Byte] = Enumeratee.mapFlatten[Array[Byte]] { e => Enumerator.enumerate(e)}
 
@@ -150,4 +151,5 @@ object Application extends Controller {
     val x: Iteratee[Byte, JsValue] = processElement.asJson
     Ok
   }
+
 }
