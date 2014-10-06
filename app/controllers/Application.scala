@@ -39,117 +39,61 @@ object Application extends Controller {
   }
 
   // step1 : produce an endless enumerator of Json objects
-  val _step1: Enumerator[Element] = Enumerator.repeat(Element())
+  val _step1: Enumerator[Element] = ???
 
   // step2 : produce an enumerator with 10 elements from elements
-  val _step2 = _step1 &> Enumeratee.take(10)
+  val _step2 = ???
 
   // step3 : produce an enumerator only with positive numbers and up to 10
-  val _step3 = _step1 &> Enumeratee.filter {
-    _.number > 0
-  } &> Enumeratee.take(1000)
+  val _step3 = ???
 
-  val toBytes: Enumeratee[Array[Byte], Byte] = Enumeratee.mapFlatten[Array[Byte]] { e => Enumerator.enumerate(e)}
+  // Convert an Array[Byte] enumerator to an [Byte] enumerator
+  val toBytes: Enumeratee[Array[Byte], Byte] = ???
 
-  def findChar(character: Byte): Iteratee[Byte, Unit] = Cont {
-    case Input.EOF => Done(())
-    case Input.Empty => findChar(character)
-    case Input.El(c) => if (c == character) Done((), Input.El(character)) else findChar(character)
-  }
+  // find a particular character in the "stream"
+  def findChar(character: Byte): Iteratee[Byte, Unit] = ???
 
-  def consumeUntil(character: Byte, found: String = ""): Iteratee[Byte, String] = Cont {
-    case Input.EOF => Done(found)
-    case Input.Empty => consumeUntil(character, found)
-    case Input.El(char) => if (char != character) consumeUntil(character, found + char.toChar) else Done(found + char.toChar)
-  }
 
-  def findChar2(character: Byte) = Enumeratee.takeWhile[Byte](_ != character)
+  // consume the stream until a particular character is found
+  def consumeUntil(character: Byte, found: String = ""): Iteratee[Byte, String] = ???
+
+  // alternative version of findChar
+  def findChar2(character: Byte) = ???
 
   val findLeftBrace = findChar('{'.toByte)
 
   val consumeUntilRightBrace = consumeUntil('}')
 
-  val processElement: Iteratee[Byte, Element] = for {
-    _ <- findLeftBrace
-    string <- consumeUntilRightBrace
-    element <- {
-      safeParse(string) match {
-        case Success(element) => Done[Byte, Element](element)
-        case Failure(_) => Error[Byte](s"$string not a valid element", Input.EOF)
-      }
-    }
-  } yield element
+  // process 1 Element from the byte stream
+  val processElement: Iteratee[Byte, Element] = ???
 
-  val processElements: Iteratee[Byte, Seq[Element]] = Iteratee.repeat[Byte, Element] {
-    processElement
-  }
+  // produce a sequence of elements from the byte stream
+  val processElements: Iteratee[Byte, Seq[Element]] = ???
 
   implicit class JsonIteratee[E, A](inner: Iteratee[E, A]) {
     def asJson(implicit F: Writes[A]): Iteratee[E, JsValue] = inner map (e => Json.toJson(e))
   }
 
   // step4: consume 10 positives and build the sum
-  val sum: Iteratee[Element, Int] = {
-    def summit(currentSum: Int): Iteratee[Element, Int] = Cont {
-      case Input.Empty => summit(currentSum)
-      case Input.EOF => Done(currentSum, Input.EOF)
-      case in@Input.El(e) =>
-        val number = Json.toJson(e).asOpt[Element]
-        number map (element => summit(currentSum + element.number)) getOrElse (Error("Meeh", in))
-    }
-
-    summit(0)
-  }
+  val sum: Iteratee[Element, Int] = ???
 
   // step4: Alternative to building the sum
-  def sum2(): Iteratee[Element, Int] = Iteratee.fold(0) { case (sum, element) => sum + element.number}
+  def sum2(): Iteratee[Element, Int] = ???
 
-  def step1 = Action {
-    Ok.chunked(_step1)
-  }
+  def step1 = TODO
 
-  def step2 = Action {
-    Ok.chunked(_step2).withHeaders(X_HELP -> "Just consume 10 elements")
-  }
+  def step2 = TODO
 
-  def step3 = Action {
-    Ok.chunked(_step3).withHeaders(X_HELP -> "Filter elements so that only positive ones are available")
-  }
+  def step3 = TODO
 
-  def step4 = Action.async {
-    for {
-      value <- _step3 |>>> sum2()
-    } yield Ok(Element(value)).withHeaders(X_HELP -> "Compute the sum from elements in an enumerator")
-  }
+  def step4 = TODO
 
-  def step5 = Action.async {
-    val stream: Future[(WSResponseHeaders, Enumerator[Array[Byte]])] = WS.url("http://localhost:9000/step3").getStream()
+  def step5 = TODO
 
-    for {
-      (headers, enumerator) <- stream
-      elements <- enumerator &> toBytes |>>> processElements
-    } yield {
-      Ok.chunked(Enumerator.enumerate(elements)).withHeaders(X_HELP -> "Process elements with WS.getStream and Iteratee.repeat")
-    }
-  }
+  def step6 = TODO
 
-  def step6 = Action.async {
-    val element: Future[Element] = WS.url("http://localhost:9000/step3").get[Element](_ => toBytes &>> processElement).flatMap(_.run)
-    element.map(Ok(_).withHeaders(X_HELP -> "WS.get example with Future[Element]"))
-  }
+  def step7 = TODO
 
-  def step7 = Action.async {
-    val element: Future[Seq[Element]] = WS.url("http://localhost:9000/step3").get[Seq[Element]](_ => toBytes &>> processElements).flatMap(_.run)
-    element.map(Ok(_).withHeaders(X_HELP -> "WS.get example with Future[Seq[Element]"))
-  }
-
-  def step8 = Action {
-    import play.api.libs.EventSource.EventIdExtractor._
-    import play.api.libs.EventSource.EventNameExtractor._
-    implicit val elementDataEvents: EventDataExtractor[Element] = EventDataExtractor[Element] { e => Json.prettyPrint(Json.toJson(e))}
-    val eventSource: Enumeratee[Element, String] = EventSource[Element]()
-    val x: Iteratee[Byte, JsValue] = processElement.asJson
-    Ok
-  }
+  def step8 = TODO
 
 }

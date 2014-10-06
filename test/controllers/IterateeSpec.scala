@@ -54,22 +54,4 @@ class IterateeSpec extends Specification {
     }
   }
 
-  "this" should {
-    "do that" in {
-      def take[E](bufferSize: Int): Enumeratee[E, E] = Concurrent.buffer[E](bufferSize)
-      def buffer[E]() : Iteratee[E, Seq[E]] = Iteratee.fold(Seq.empty[E]){case (buffer, e) => buffer :+ e}
-      def write[E](onBufferFull: Seq[E] => Unit) : Iteratee[Seq[E], Unit] = Cont {
-        case Input.Empty => write(onBufferFull)
-        case Input.EOF => Done((), Input.EOF)
-        case Input.El(elements) => onBufferFull(elements)
-            write(onBufferFull)
-      }
-
-      def bufferedWrite[E](bufferSize: Int, onBufferFull: Seq[E] => Unit): Iteratee[E, Unit] = {
-       val x = take[E](bufferSize) &>> buffer[E]()
-        x.
-      }
-
-    }
-  }
 }
